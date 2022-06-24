@@ -7,6 +7,7 @@ import android.view.MotionEvent;
 import android.os.Handler;
 import android.os.Looper;
 import android.content.Context;
+import android.util.TypedValue;
 import android.graphics.PointF;
 import android.graphics.Color;
 public class StickerView extends FrameLayout {
@@ -22,6 +23,13 @@ close = new ImageView(ctx);
 addView(scale);
 addView(rotate);
 addView(close);
+/*float minThis= TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,100, ctx.getResources().getDisplayMetrics());
+float minOther = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,50, ctx.getResources().getDisplayMetrics());
+setMinimumWidth(100);
+setMinimumHeight(100);
+scale.setMinimumWidth(50);
+close.setMinimumWidth(50);
+rotate.setMinimumWidth(50);*/
 close.setOnClickListener(new View.OnClickListener(){
 @Override
 public void onClick(View _view){
@@ -46,7 +54,6 @@ rotate.setOnTouchListener(new View.OnTouchListener(){
 					private float centerX;
 					private float centerY;
 					private float dry;
-		
 		            public boolean onTouch(View view, MotionEvent motionEvent) {
 			                int n = motionEvent.getAction();
 							if(n==MotionEvent.ACTION_UP){
@@ -59,6 +66,7 @@ rotate.setOnTouchListener(new View.OnTouchListener(){
 							if(n==MotionEvent.ACTION_DOWN){
 								sx=motionEvent.getX();
 								sy=motionEvent.getY();
+								rotation=view.getRotation();
 								centerY=frame.getY()+frame.getMeasuredHeight()/2;
 								centerX=frame.getX()+frame.getMeasuredWidth()/2;
 							}
@@ -72,10 +80,12 @@ rotate.setOnTouchListener(new View.OnTouchListener(){
 				                    //frame.setLayoutParams(new FrameLayout.LayoutParams((int) (cx),(int) (cy)));
 									
 									double angle = Math.atan2(motionEvent.getRawY() - centerY, motionEvent.getRawX() - centerX) * 180 / Math.PI;
+			angle=angle-45-90;
+			if(angle<0) angle+=360;
 									if(!drag){
-									frame.setRotation((float)angle-45-90);
-									selected.setRotation((float)angle-45-90);
-									if(OnEvent != null) OnEvent.onRotation((float)angle-45-90);
+									frame.setRotation((float)angle);
+									selected.setRotation((float)angle);
+									if(OnEvent != null) OnEvent.onRotation((float)angle);
 									}
 				                    return true;
 				                }
@@ -124,9 +134,11 @@ scale.setOnTouchListener(new View.OnTouchListener(){
 				                    float cx = this.initialX + (int)(motionEvent.getRawX() - this.initialTouchX);
 				                    float cy = this.initialY + (int)(motionEvent.getRawY() - this.initialTouchY);
 				                 if((cy>0)&&(cx>0)&&(!drag)){ 
-									 frame.setLayoutParams(new FrameLayout.LayoutParams((int) (cx),(int) (cy)));
-									selected.setLayoutParams(new FrameLayout.LayoutParams((int) (cx-dw),(int) (cy-dh)));
-									if(OnEvent != null) OnEvent.onSizeChanged((int)(cx-dw),(int)(cy-dh));
+		 //frame.setLayoutParams(new FrameLayout.LayoutParams((int) (cx),(int) (cy)));
+		 selected.setLayoutParams(new FrameLayout.LayoutParams((int) (cx-dw),(int) (cy-dh)));
+		 nh=(int)(cy-dh);
+		 nw=(int)(cx-dw);
+	if(OnEvent != null) OnEvent.onSizeChanged((int)(cy-dh),(int)(cx-dw));
 									}
 									selected.setX(xx);
 									selected.setY(yy);
@@ -141,6 +153,8 @@ scale.setOnTouchListener(new View.OnTouchListener(){
 			            }
 		        });
 }
+int nh=9999;//lazy way
+int nw;
 interface onEvent {
 public void onRotation(float rotation);
 public void onClose();
@@ -164,20 +178,42 @@ new Handler(Looper.getMainLooper()).post(new Runnable() {
 		});
 }
 } 
+
 public void select(View v){
 selected=v;
 setVisibility(View.VISIBLE);
-setLayoutParams(new FrameLayout.LayoutParams((int) (v.getMeasuredWidth()+3),(int) (v.getMeasuredHeight()+3)));
+if(nh==9999){
+nw=(int)(v.getMeasuredWidth()+3);
+nh =(int)(v.getMeasuredHeight()+3);
+}
+setLayoutParams(new FrameLayout.LayoutParams(nw,nh));
+if(!(nw>100)){getLayoutParams().width=100;}
+if(!(nh>100)){getLayoutParams().height=100;}
 setX(v.getX()-3);
 setY(v.getY()-3);
 setRotation(v.getRotation());
-scale.setX(/*v.getX()+*/v.getMeasuredWidth()-scale.getMeasuredWidth());
-scale.setY(/*v.getX()+*/v.getMeasuredHeight()-scale.getMeasuredHeight());
-close.setX(/*v.getX()+*/v.getMeasuredWidth()-close.getMeasuredWidth());
-rotate.setY(/*v.getY()+*/v.getMeasuredHeight()-rotate.getMeasuredHeight());
-close.setLayoutParams(new FrameLayout.LayoutParams((int) (this.getWidth() / 5),(int) (this.getHeight() / 5)));
-rotate.setLayoutParams(new FrameLayout.LayoutParams((int) (this.getWidth() / 5),(int) (this.getHeight() / 5)));
-scale.setLayoutParams(new FrameLayout.LayoutParams((int) (this.getWidth() / 5),(int) (this.getHeight() / 5)));
+boolean b=(getMeasuredWidth()/5)>=50;
+if(b&&((getMeasuredHeight()/5)>=50)) {
+close.setLayoutParams(new FrameLayout.LayoutParams((int) (this.getMeasuredWidth() / 5),(int) (this.getMeasuredHeight() / 5)));
+rotate.setLayoutParams(new FrameLayout.LayoutParams((int) (this.getMeasuredWidth() / 5),(int) (this.getMeasuredHeight() / 5)));
+scale.setLayoutParams(new FrameLayout.LayoutParams((int) (this.getMeasuredWidth() / 5),(int) (this.getMeasuredHeight() / 5)));
+} else if(b){
+close.setLayoutParams(new FrameLayout.LayoutParams((int) (this.getMeasuredWidth() / 5),50));
+rotate.setLayoutParams(new FrameLayout.LayoutParams((int) (this.getMeasuredWidth() / 5),50));
+scale.setLayoutParams(new FrameLayout.LayoutParams((int) (this.getMeasuredWidth() / 5),50));
+} else if(((getMeasuredHeight()/5)>=50)) {
+close.setLayoutParams(new FrameLayout.LayoutParams(50,(int) (this.getMeasuredHeight() / 5)));
+scale.setLayoutParams(new FrameLayout.LayoutParams(50,(int) (this.getMeasuredHeight() / 5)));
+rotate.setLayoutParams(new FrameLayout.LayoutParams(50,(int) (this.getMeasuredHeight() / 5)));
+} else {
+close.setLayoutParams(new FrameLayout.LayoutParams(50,50));
+scale.setLayoutParams(new FrameLayout.LayoutParams(50,50));
+rotate.setLayoutParams(new FrameLayout.LayoutParams(50,50));
+}
+scale.setX(getMeasuredWidth()-scale.getMeasuredWidth());
+scale.setY(getMeasuredHeight()-scale.getMeasuredHeight());
+close.setX(getMeasuredWidth()-close.getMeasuredWidth());
+rotate.setY(getMeasuredHeight()-rotate.getMeasuredHeight());
 if(rotate.getMeasuredHeight()==0) new selectThread().start();
 } 
 public void unselect(){
@@ -188,10 +224,13 @@ private PointF StartPT = new PointF();
 private float SX;
 private boolean drag=false;
 private float SY;
+private float rotation;
 @Override
     public boolean onTouchEvent(MotionEvent event) {
 switch (event.getAction()) {
 					case MotionEvent.ACTION_MOVE:
+					//setRotation(0);
+					//selected.setRotation(0);
 					PointF mv = new PointF(event.getX() - DownPT.x, event.getY() - DownPT.y);
 					setX((int)(StartPT.x+mv.x));
 					setY((int)(StartPT.y+mv.y));
@@ -202,12 +241,21 @@ switch (event.getAction()) {
 					case MotionEvent.ACTION_DOWN : 
 					DownPT.x = event.getX();
 					DownPT.y = event.getY();
+					rotation=getRotation();
+					setRotation(0);
+					setAlpha(0);
+					setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b, int c, int d) { this.setCornerRadius(a); this.setStroke(b, c); this.setColor(d); return this; } }.getIns((int)0, (int)1, Color.TRANSPARENT, Color.TRANSPARENT));
+					//selected.setRotation(0);
 					drag=true;
 					StartPT = new PointF(getX(),getY());
 					SX=getX()-selected.getX();
 					SY=getY()-selected.getY();
 					break;
 					case MotionEvent.ACTION_UP : 
+					setRotation(rotation);
+					setAlpha(1);
+					selected.setRotation(rotation);
+					setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b, int c, int d) { this.setCornerRadius(a); this.setStroke(b, c); this.setColor(d); return this; } }.getIns((int)0, (int)1, 0xFF607D8B, Color.TRANSPARENT));
 					select(selected);
 					drag=false;
 					break;
